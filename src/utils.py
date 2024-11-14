@@ -68,13 +68,18 @@ def convert_dataset_into_tensor_dict(data):
     success = torch.tensor(data[:, -3:].astype(float))
     result_dict = {}
     for ind, col in enumerate(constants.FEATURE_COLUMNS):
-        # if col in  constants.TIME_SERIES_DATA_SHAPES.keys() and constants.TIME_SERIES_DATA_SHAPES[col][0] > 1:
-        #     result_dict[col] = torch.tensor(np.stack(data[:, ind]), dtype=torch.float).unsqueeze(1)
-        # else:
-        print(data[:, ind])
         result_dict[col] = torch.tensor(np.stack(data[:, ind]), dtype=torch.float)
 
     
     result_dict["success"] = success
 
     return result_dict
+
+
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+
+    except Exception as e:
+        raise CustomException(e, sys)

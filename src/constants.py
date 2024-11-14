@@ -33,17 +33,30 @@ NUMERICAL_DATA = ["mel_spectrogram",
                   "tonnetz"]
 CATEGORICAL_DATA = ["genres", "listens"]
 
+# TIME_SERIES_DATA_SHAPES = {
+#     "original_audio":(479626,),
+#     "mel_spectrogram":(128, 937),
+#     "mfccs":(13, 937),
+#     "chroma":(12, 937),
+#     "spectral_contrast":(7, 937),
+#     "zcr":(1, 937),
+#     "spectral_centroid":(1, 937),
+#     "spectral_bandwidth":(1, 937),
+#     "rms_energy":(1, 937),
+#     "tonnetz":(6, 937),
+# }
+
 TIME_SERIES_DATA_SHAPES = {
     "original_audio":(479626,),
-    "mel_spectrogram":(128, 937),
-    "mfccs":(13, 937),
-    "chroma":(12, 937),
-    "spectral_contrast":(7, 937),
-    "zcr":(1, 937),
-    "spectral_centroid":(1, 937),
-    "spectral_bandwidth":(1, 937),
-    "rms_energy":(1, 937),
-    "tonnetz":(6, 937),
+    "mel_spectrogram":(128, 1024),
+    "mfccs":(8, 1024),
+    "chroma":(8, 1024),
+    "spectral_contrast":(8, 1024),
+    "zcr":(1, 1024),
+    "spectral_centroid":(1, 1024),
+    "spectral_bandwidth":(1, 1024),
+    "rms_energy":(1, 1024),
+    "tonnetz":(8, 1024),
 }
 
 FEATURE_COLUMNS = ["genre",
@@ -58,3 +71,7 @@ FEATURE_COLUMNS = ["genre",
                 "spectral_bandwidth",
                 "rms_energy",
                 "tonnetz",]
+
+AVG_POOL_2D = (2, 2)
+AVG_POOL_1D = 2
+SCALAR_OUTPUT = 32
