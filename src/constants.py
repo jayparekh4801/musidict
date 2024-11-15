@@ -72,6 +72,6 @@ FEATURE_COLUMNS = ["genre",
                 "rms_energy",
                 "tonnetz",]
 
-AVG_POOL_2D = (4, 512)
-AVG_POOL_1D = 512
+AVG_POOL_2D = (4, 256)
+AVG_POOL_1D = 256
 SCALAR_OUTPUT = 128

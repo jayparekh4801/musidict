@@ -80,8 +80,8 @@ class DataModule(L.LightningDataModule):
     
     def val_dataloader(self):
         val_data = MusicDataset(self.val_data)
-        return DataLoader(val_data, batch_size=self.batch_size, shuffle=True, num_workers=3)
+        return DataLoader(val_data, batch_size=self.batch_size, num_workers=3)
 
     def test_dataloader(self):
         test_data = MusicDataset(self.test_data)
-        return DataLoader(test_data, batch_size=self.batch_size, shuffle=True, num_workers=3)
+        return DataLoader(test_data, batch_size=self.batch_size, num_workers=3)

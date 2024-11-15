@@ -40,7 +40,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
-            nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
+            nn.AdaptiveMaxPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
         
@@ -52,7 +52,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
-            nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
+            nn.AdaptiveMaxPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
         
@@ -64,7 +64,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
-            nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
+            nn.AdaptiveMaxPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
         
@@ -76,7 +76,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
-            nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
+            nn.AdaptiveMaxPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
         
@@ -88,7 +88,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
-            nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
+            nn.AdaptiveMaxPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
 
@@ -99,7 +99,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
+            nn.AdaptiveMaxPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
         self.spectral_centroid_branch = nn.Sequential(
@@ -109,7 +109,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
+            nn.AdaptiveMaxPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
         self.spectral_bandwidth_branch = nn.Sequential(
@@ -119,7 +119,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
+            nn.AdaptiveMaxPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
         self.rms_energy_branch = nn.Sequential(
@@ -129,7 +129,7 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU(),
             nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
+            nn.AdaptiveMaxPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
 
@@ -141,14 +141,13 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.ReLU()
         )
 
-        # combined_size = 32 * 5 + 8 * 4 + 32
         combined_size = constants.AVG_POOL_2D[0] * constants.AVG_POOL_2D[1] * 64 * 5 + constants.AVG_POOL_1D * 32 * 4 + constants.SCALAR_OUTPUT
         
         # Fully Connected Layers for Final Combined Output
         self.fc = nn.Sequential(
             nn.Linear(combined_size, 128),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(self.dropout_prob),
             nn.Linear(128, 3)  # 3 output classes (hit, flop, can't say)
         )
 
@@ -272,7 +271,7 @@ class MusicSuccessPredictor(L.LightningModule):
             scheduler.step(metric)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)#, weight_decay=1e-5)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-5)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10,17,27], gamma=0.5, verbose=True)
         lr_scheduler = {
             'scheduler': scheduler,
@@ -284,14 +283,13 @@ class MusicSuccessPredictor(L.LightningModule):
 if __name__ == "__main__":
     batch_size = 1
     criterion = nn.CrossEntropyLoss()
-    learning_rate = 0.0001
+    learning_rate = 0.001
     dropout_prob = 0.1
     lr_logger = LearningRateMonitor()
     early_stopping = EarlyStopping('val_loss_mean', mode='min', patience=10)
     model_checkpoint = ModelCheckpoint(dirpath="../artifacts/MODELS",save_last=True, save_top_k=3, monitor="val_loss_mean")
     epochs = 60
     data_loader_obj = data_loading.DataModule(batch_size=batch_size)
-    # data_ingestion.DataIngestion().initiate_data_ingestion()
     train_loader = data_loader_obj.train_dataloader()
     val_loader = data_loader_obj.val_dataloader()
     test_loader = data_loader_obj.val_dataloader()
@@ -300,6 +298,5 @@ if __name__ == "__main__":
 
     trainer = L.Trainer(max_epochs=epochs, callbacks=[lr_logger, early_stopping, model_checkpoint])
     trainer.fit(lightning_model, train_loader, val_loader)
-    # outputs = trainer.predict(lightning_model, test_loader)
-    
+    outputs = trainer.predict(lightning_model, test_loader)
     
