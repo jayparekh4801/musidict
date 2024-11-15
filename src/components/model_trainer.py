@@ -11,6 +11,11 @@ from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, Mode
 from src.components import data_loading
 from src.components import data_ingestion
 from src import constants
+from src.components.data_transformation import ArrayColumnTransformer
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+from src import utils
 
 
 @dataclass
@@ -262,7 +267,7 @@ class MusicSuccessPredictor(L.LightningModule):
 
         # Backward pass and optimization
         print(loss.item())
-        return loss
+        return outputs
     
     def lr_scheduler_step(self, scheduler, metric):
         if metric is None:
@@ -279,6 +284,38 @@ class MusicSuccessPredictor(L.LightningModule):
             'interval': 'epoch'
         }
         return ([optimizer], [lr_scheduler])
+
+
+def create_confusion_Matrix(outputs, test_loader, transformation_obj, batch_size):
+    # print(outputs)
+    print(outputs)
+    
+    # pred_one_hot_output = torch.zeros(size=(len(outputs), 3))
+    # actual_one_hot_output = torch.zeros(size=(len(outputs), 3))
+
+    # pred_one_hot_output[:,torch.argmax(outputs)] = 1
+    actual_cat = []
+    for batch in test_loader:
+        for actual in batch:
+            actual_cat.append(actual)
+    print(actual_cat)
+    print(np.stack(actual_cat).shape)
+    
+    # output_transformer = self.transfrmation_obj.named_transformers_['cat_transforms']
+
+    # y_pred = output_transformer.inverse_transform(pred_one_hot_output)
+    # y_actual = output_transformer.inverse_transform(pred_one_hot_output)
+
+    # cm = confusion_matrix(y_actual, y_pred, labels=class_labels)
+
+    # Visualize the confusion matrix
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_labels, yticklabels=class_labels)
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    plt.title('Confusion Matrix')
+    plt.show()
+    plt.save_fig("image.png")
+
     
 if __name__ == "__main__":
     batch_size = 1
@@ -288,7 +325,7 @@ if __name__ == "__main__":
     lr_logger = LearningRateMonitor()
     early_stopping = EarlyStopping('val_loss_mean', mode='min', patience=10)
     model_checkpoint = ModelCheckpoint(dirpath="../artifacts/MODELS",save_last=True, save_top_k=3, monitor="val_loss_mean")
-    epochs = 60
+    epochs = 1
     data_loader_obj = data_loading.DataModule(batch_size=batch_size)
     train_loader = data_loader_obj.train_dataloader()
     val_loader = data_loader_obj.val_dataloader()
@@ -298,5 +335,7 @@ if __name__ == "__main__":
 
     trainer = L.Trainer(max_epochs=epochs, callbacks=[lr_logger, early_stopping, model_checkpoint])
     trainer.fit(lightning_model, train_loader, val_loader)
-    outputs = trainer.predict(lightning_model, test_loader)
+    outputs, loss = trainer.predict(lightning_model, test_loader)
+    transformation_obj = utils.load_object(os.path.join(os.getcwd(), "artifacts", "transformation.pkl"))
+    create_confusion_Matrix(outputs, test_loader, transformation_obj, batch_size)
     
