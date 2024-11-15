@@ -8,11 +8,12 @@ import lightning as L
 from sklearn.model_selection import train_test_split
 
 from src import utils
-L.seed_everything(7, workers=True)
 
 @dataclass
 class DataLoaderConfig:
-    transformed_data_path = os.path.join(os.getcwd(), "data/transformed_data", "transformed_dataset.npy")
+    # transformed_data_path = os.path.join(os.getcwd(), "data/transformed_data", "transformed_dataset.npy")
+    transformed_data_path = os.path.join("/home/jparekh4/musidict", "data/transformed_data", "transformed_dataset.npy")
+    
 
 
 class MusicDataset(Dataset):
@@ -21,21 +22,21 @@ class MusicDataset(Dataset):
         
 
     def __getitem__(self, idx):
-        mel_spectrogram = torch.tensor(self.features['mel_spectrogram'][idx], dtype=torch.float32).unsqueeze(0)
-        mfccs = torch.tensor(self.features['mfccs'][idx], dtype=torch.float32).unsqueeze(0)
-        chroma = torch.tensor(self.features['chroma'][idx], dtype=torch.float32).unsqueeze(0)
-        spectral_contrast = torch.tensor(self.features['spectral_contrast'][idx], dtype=torch.float32).unsqueeze(0)
-        zcr = torch.tensor(self.features['zcr'][idx], dtype=torch.float32)
-        spectral_centroid = torch.tensor(self.features['spectral_centroid'][idx], dtype=torch.float32)
-        spectral_bandwidth = torch.tensor(self.features['spectral_bandwidth'][idx], dtype=torch.float32)
-        rms_energy = torch.tensor(self.features['rms_energy'][idx], dtype=torch.float32)
-        tonnetz = torch.tensor(self.features['tonnetz'][idx], dtype=torch.float32).unsqueeze(0)
+        mel_spectrogram = self.features['mel_spectrogram'][idx].clone().detach().unsqueeze(0).float()
+        mfccs = self.features['mfccs'][idx].clone().detach().unsqueeze(0).float()
+        chroma = self.features['chroma'][idx].clone().detach().unsqueeze(0).float()
+        spectral_contrast = self.features['spectral_contrast'][idx].clone().detach().unsqueeze(0).float()
+        zcr = self.features['zcr'][idx].clone().detach().float()
+        spectral_centroid = self.features['spectral_centroid'][idx].clone().detach().float()
+        spectral_bandwidth = self.features['spectral_bandwidth'][idx].clone().detach().float()
+        rms_energy = self.features['rms_energy'][idx].clone().detach().float()
+        tonnetz = self.features['tonnetz'][idx].clone().detach().unsqueeze(0).float()
         # Scalar features
-        bit_rate = torch.tensor(self.features["bit_rate"][idx], dtype=torch.float32)
-        duration = torch.tensor(self.features["duration"][idx], dtype=torch.float32)
-        genre = torch.tensor(self.features["genre"][idx], dtype=torch.float32)
+        bit_rate = self.features["bit_rate"][idx].clone().detach().float()
+        duration = self.features["duration"][idx].clone().detach().float()
+        genre = self.features["genre"][idx].clone().detach().float()
 
-        target = torch.tensor(self.features["success"][idx], dtype=torch.float32)  # One-hot encoded target
+        target = self.features["success"][idx].clone().detach().float() # One-hot encoded target
 
         return {
             'mel_spectrogram': mel_spectrogram,
@@ -68,7 +69,7 @@ class DataModule(L.LightningDataModule):
         self.dataset = np.load(self.transformed_data.transformed_data_path, allow_pickle=True)
         # self.dataset = np.load("/Users/jayparekh/Documents/projects/musidict/data/transformed_data/transformed_dataset.npy", allow_pickle=True)
         train_data, temp_data = train_test_split(self.dataset, test_size=0.2, random_state=42, shuffle=True)
-        val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42, shuffle=True)
+        val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
         self.train_data = utils.convert_dataset_into_tensor_dict(train_data)
         self.val_data = utils.convert_dataset_into_tensor_dict(val_data)
         self.test_data = utils.convert_dataset_into_tensor_dict(test_data)

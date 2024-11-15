@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import lightning as L
-L.seed_everything(7, workers=True)
 from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
 
 from src.components import data_loading
@@ -39,6 +38,8 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, kernel_size=(3, 3), stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
             nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
             nn.Flatten(),  # To flatten for concatenation later
         )
@@ -49,8 +50,10 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, kernel_size=(3, 3), stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
             nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
-            nn.Flatten()
+            nn.Flatten(),  # To flatten for concatenation later
         )
         
         self.chroma_conv = nn.Sequential(
@@ -59,8 +62,10 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, kernel_size=(3, 3), stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
             nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
-            nn.Flatten()
+            nn.Flatten(),  # To flatten for concatenation later
         )
         
         self.spectral_contrast_conv = nn.Sequential(
@@ -69,8 +74,10 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, kernel_size=(3, 3), stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
             nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
-            nn.Flatten()
+            nn.Flatten(),  # To flatten for concatenation later
         )
         
         self.tonnetz_conv = nn.Sequential(
@@ -79,12 +86,18 @@ class MusicSuccessPredictor(L.LightningModule):
             nn.MaxPool2d((2, 2)),
             nn.Conv2d(16, 32, kernel_size=(3, 3), stride=1, padding=1),
             nn.ReLU(),
+            nn.MaxPool2d((2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(3, 3), stride=1, padding=1),
             nn.AdaptiveAvgPool2d(constants.AVG_POOL_2D),
-            nn.Flatten()
+            nn.Flatten(),  # To flatten for concatenation later
         )
 
         self.zcr_branch = nn.Sequential(
             nn.Conv1d(1, 8, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
@@ -92,17 +105,29 @@ class MusicSuccessPredictor(L.LightningModule):
         self.spectral_centroid_branch = nn.Sequential(
             nn.Conv1d(1, 8, kernel_size=3, padding=1),
             nn.ReLU(),
+            nn.Conv1d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
         self.spectral_bandwidth_branch = nn.Sequential(
             nn.Conv1d(1, 8, kernel_size=3, padding=1),
             nn.ReLU(),
+            nn.Conv1d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
         )
         self.rms_energy_branch = nn.Sequential(
             nn.Conv1d(1, 8, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(8, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv1d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.AdaptiveAvgPool1d(constants.AVG_POOL_1D),
             nn.Flatten()
@@ -117,7 +142,7 @@ class MusicSuccessPredictor(L.LightningModule):
         )
 
         # combined_size = 32 * 5 + 8 * 4 + 32
-        combined_size = constants.AVG_POOL_2D[0] * constants.AVG_POOL_2D[1] * 32 * 5 + constants.AVG_POOL_1D * 8 * 4 + constants.SCALAR_OUTPUT
+        combined_size = constants.AVG_POOL_2D[0] * constants.AVG_POOL_2D[1] * 64 * 5 + constants.AVG_POOL_1D * 32 * 4 + constants.SCALAR_OUTPUT
         
         # Fully Connected Layers for Final Combined Output
         self.fc = nn.Sequential(
@@ -141,8 +166,6 @@ class MusicSuccessPredictor(L.LightningModule):
         rms_energy_out = self.rms_energy_branch(rms_energy)
 
         scalar_out = self.scalar_branch(scalar_features)
-        print("z", zcr_out.shape)
-        print("t", tonnetz_out.shape)
         combined = torch.cat((mel_out, mfcc_out, chroma_out, spectral_contrast_out, tonnetz_out, 
                               zcr_out, spectral_centroid_out, spectral_bandwidth_out, rms_energy_out, scalar_out), dim=1)
         
@@ -261,12 +284,12 @@ class MusicSuccessPredictor(L.LightningModule):
 if __name__ == "__main__":
     batch_size = 1
     criterion = nn.CrossEntropyLoss()
-    learning_rate = 0.001
-    dropout_prob = 0.3
+    learning_rate = 0.0001
+    dropout_prob = 0.1
     lr_logger = LearningRateMonitor()
     early_stopping = EarlyStopping('val_loss_mean', mode='min', patience=10)
     model_checkpoint = ModelCheckpoint(dirpath="../artifacts/MODELS",save_last=True, save_top_k=3, monitor="val_loss_mean")
-    epochs = 10
+    epochs = 60
     data_loader_obj = data_loading.DataModule(batch_size=batch_size)
     # data_ingestion.DataIngestion().initiate_data_ingestion()
     train_loader = data_loader_obj.train_dataloader()
