@@ -16,7 +16,7 @@ from src.components.array_column_transformer import ArrayColumnTransformer
 
 class PredictPipeline:
     def __init__(self) -> None:
-        self.model_path = os.path.join(os.getcwd(), "artifacts", "MODELS/epoch=2-step=3.ckpt")
+        self.model_path = os.path.join(os.getcwd(), "artifacts", "MODELS/epoch=59-step=6180.ckpt")
         self.transformer_obj_path = os.path.join(os.getcwd(), "artifacts", "transformation.pkl")
     
     def predict(self, data):
