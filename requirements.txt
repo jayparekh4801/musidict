@@ -3,4 +3,15 @@ pandas
 scikit-learn
 torch
 lightning
+flask
+flask-cors
+fastapi
+python-multipart
+uvicorn
+pydub
+librosa
+dill
+jinja2
+seaborn
+matplotlib
 #-e .

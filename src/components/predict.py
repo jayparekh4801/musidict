@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import pickle
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -11,7 +10,6 @@ from src.components import data_ingestion
 from src.components.data_transformation import ArrayColumnTransformer
 from src.components import model_trainer
 from src import utils
-from src.components import data_loading
 
 
 class PredictModuleConfig:
@@ -25,12 +23,13 @@ class PredictModule:
     def __init__(self):
         self.predict_config = PredictModuleConfig()
         self.transformer_obj_file = os.path.join(self.predict_config.artifacts, self.predict_config.transformation_object_file)
-        self. transfrmation_obj = utils.load_object(self.transformer_obj_file)
+        self.transfrmation_obj = utils.load_object(self.transformer_obj_file)
 
     def performTransformation(self):
         data = np.load(os.path.join(os.getcwd(), self.predict_config.predict_file), allow_pickle=True)
-        preprocessed_data = data_ingestion.DataIngestion.preprocess_file(data)
-        preprocessed_data = np.array(preprocessed_data).reshape((1, 13))
+        preprocessed_data = utils.preprocess_file(data)
+        print(preprocessed_data)
+        preprocessed_data = np.array(preprocessed_data, dtype=object).reshape((1, 13))
         data_df = pd.DataFrame(preprocessed_data, columns=[
                 "genre",
                 "bit_rate",

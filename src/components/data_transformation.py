@@ -5,10 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import FunctionTransformer
 
 
 import torch
@@ -16,6 +13,7 @@ import torch
 from src.exception import CustomException
 from src.logger import logging
 from src.components import data_ingestion
+from src.components.array_column_transformer import ArrayColumnTransformer
 from src import constants
 from src import utils
 
@@ -25,28 +23,6 @@ from dataclasses import dataclass
 class DataTransformationConfig:
     tranformationObjectPath:  str = "artifacts/transformation.pkl"
     transformedDataPathDir: str = "data/transformed_data/"
-
-
-class ArrayColumnTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, scaler=None):
-        # Use StandardScaler by default if no scaler is provided
-        self.scaler = scaler or StandardScaler()
-
-    def fit(self, X, y=None):
-        # No fitting necessary for transformation
-        return self
-
-    def transform(self, X):
-        df_data = []
-        for _, val in X.iterrows():
-            cols_data = []
-            for col in X.columns:
-                transformed_row = self.scaler.fit_transform(val[col])
-                cols_data.append(transformed_row)
-            df_data.append(cols_data)
-        
-        df_data = np.array(df_data, dtype=object)
-        return pd.DataFrame(df_data, columns=X.columns)
 
 
 class DataTransformation:

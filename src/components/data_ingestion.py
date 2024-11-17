@@ -26,37 +26,6 @@ class DataIngestion:
         self.data_ingestion_config = DataIngestionConfig()
         self.data_dict = {}
 
-    @classmethod
-    def preprocess_file(cls, data):
-        data_point = []
-        if "metadata" not in data.keys():
-            print(f"{filename} skipped.")
-            return None
-            
-        genre = utils.preprocess_genres(data["metadata"][0]["genres"])
-        if not genre:
-            print(f"{filename} skipped.")
-            return None
-
-        data_point.append(genre)
-        data_point.append(data["metadata"][0]["bit_rate"])
-        data_point.append(data["metadata"][0]["duration"])
-        data_point.append(utils.categorize_listens(data["metadata"][0]["listens"]))
-        
-
-        data = utils.reshape_all_time_series_data(data)
-        data_point.append(np.array(data["mel_spectrogram"]))
-        data_point.append(np.array(data["mfccs"]))
-        data_point.append(np.array(data["chroma"]))
-        data_point.append(np.array(data["spectral_contrast"]))
-        data_point.append(np.array(data["zcr"]))
-        data_point.append(np.array(data["spectral_centroid"]))
-        data_point.append(np.array(data["spectral_bandwidth"]))
-        data_point.append(np.array(data["rms_energy"]))
-        data_point.append(np.array(data["tonnetz"]))
-
-        return data_point
-
     def initiate_data_ingestion(self):
             dataset = []
             logging.info("Data Ingestion Started.")
@@ -67,8 +36,9 @@ class DataIngestion:
                     try:
                         file_path = os.path.join(os.getcwd(), self.data_ingestion_config.raw_data_path, filename)
                         data = np.load(file_path, allow_pickle=True)
-                        data = self.preprocess_file(data)
+                        data = utils.preprocess_file(data)
                         if not data:
+                            print(f"{filename} skipped.")
                             continue
                         dataset.append(data)
                         count += 1
