@@ -17,11 +17,11 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
 )
-templates = Jinja2Templates(directory="templates")
+# templates = Jinja2Templates(directory="templates")
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+# @app.get("/", response_class=HTMLResponse)
+# async def read_root(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request})
 
 
 # Directory to store uploaded files
@@ -30,7 +30,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/upload")
 async def upload_audio(
-    request: Request,
     bit_rate: int = Form(...),
     genre: str = Form(...),
     duration: int = Form(...),
@@ -49,7 +48,10 @@ async def upload_audio(
     }
 
     result = predict_pipeline.PredictPipeline().predict(metadata)
-    return templates.TemplateResponse("index.html", {"request": request, "result": result[0][0]})
+    return JSONResponse(content={
+        "message": f"Audio file converted to MP3 and uploaded successfully!",
+        "data": result[0][0]
+        })
 
 
 
