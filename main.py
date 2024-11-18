@@ -30,6 +30,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/upload")
 async def upload_audio(
+    request: Request,
     bit_rate: int = Form(...),
     genre: str = Form(...),
     duration: int = Form(...),
@@ -48,10 +49,7 @@ async def upload_audio(
     }
 
     result = predict_pipeline.PredictPipeline().predict(metadata)
-    return JSONResponse(content={
-        "message": f"Audio file converted to MP3 and uploaded successfully!",
-        "data": result[0][0]
-        })
+    return templates.TemplateResponse("index.html", {"request": request, "result": result[0][0]})
 
 
 
